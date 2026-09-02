@@ -180,40 +180,36 @@ else:
 
 
 # =========================================
-# DEMO BUILDINGS
+# REAL BUILDINGS (OpenStreetMap Overpass)
 # =========================================
 
-buildings = pd.DataFrame({
-    "id": ["B001", "B002", "B003", "B004", "B005"],
-    "type": [
-        "Hospital",
-        "School",
-        "House",
-        "House",
-        "Hospital"
-    ],
-    "latitude": [
-        11.025,
-        11.026,
-        11.020,
-        11.030,
-        11.028
-    ],
-    "longitude": [
-        76.965,
-        76.968,
-        76.960,
-        76.970,
-        76.958
-    ],
-    "population": [
-        250,
-        500,
-        5,
-        4,
-        180
-    ]
-})
+@st.cache_data(ttl=3600)  # cache for 1 hour so you're not hammering the API
+def get_real_buildings(south, west, north, east):
+    query = f"""
+    [out:json];
+    (
+      node["amenity"="hospital"]({south},{west},{north},{east});
+      node["amenity"="school"]({south},{west},{north},{east});
+    );
+    out body;
+    """
+    r = requests.get("https://overpass-api.de/api/interpreter", params={"data": query})
+    elements = r.json()["elements"]
+
+    rows = []
+    for i, el in enumerate(elements):
+        tags = el.get("tags", {})
+        btype = "Hospital" if tags.get("amenity") == "hospital" else "School"
+        rows.append({
+            "id": f"B{i+1:03d}",
+            "type": btype,
+            "latitude": el["lat"],
+            "longitude": el["lon"],
+            "population": 100  # OSM doesn't give population — keep a placeholder or your own estimate
+        })
+    return pd.DataFrame(rows)
+
+buildings = get_real_buildings(10.95, 76.90, 11.10, 77.05)
 
 
 # =========================================
