@@ -185,48 +185,40 @@ else:
 # =========================================
 
 # =========================================
-# REAL BUILDINGS (OpenStreetMap Overpass)
+# DEMO BUILDINGS
 # =========================================
-@st.cache_data(ttl=3600)
-def get_real_buildings(south, west, north, east):
-    query = f"""
-    [out:json];
-    (
-        node["amenity"="hospital"]({south},{west},{north},{east});
-        node["amenity"="school"]({south},{west},{north},{east});
-    );
-    out body;
-    """
 
-    try:
-        r = requests.get(
-            "https://overpass-api.de/api/interpreter",
-            params={"data": query},
-            timeout=30,
-        )
-        r.raise_for_status()
-        elements = r.json().get("elements", [])
-    except Exception:
-        return pd.DataFrame(
-            columns=["id", "type", "latitude", "longitude", "population"]
-        )
-
-    rows = []
-    for i, el in enumerate(elements):
-        tags = el.get("tags", {})
-        btype = "Hospital" if tags.get("amenity") == "hospital" else "School"
-        rows.append({
-            "id": f"B{i + 1:03d}",
-            "type": btype,
-            "latitude": el["lat"],
-            "longitude": el["lon"],
-            "population": 100,
-        })
-
-    return pd.DataFrame(rows)
-
-
-buildings = get_real_buildings(10.95, 76.90, 11.10, 77.05)
+buildings = pd.DataFrame({
+    "id": ["B001", "B002", "B003", "B004", "B005"],
+    "type": [
+        "Hospital",
+        "School",
+        "House",
+        "House",
+        "Hospital"
+    ],
+    "latitude": [
+        11.025,
+        11.026,
+        11.020,
+        11.030,
+        11.028
+    ],
+    "longitude": [
+        76.965,
+        76.968,
+        76.960,
+        76.970,
+        76.958
+    ],
+    "population": [
+        250,
+        500,
+        5,
+        4,
+        180
+    ]
+})
 
 
 
